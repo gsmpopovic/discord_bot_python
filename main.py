@@ -47,20 +47,30 @@ async def greet_user(name):
     return greeting
 
 @bot.command(name="update_commands", help="Create new command based on user inputting a string--name of new command.")
-async def update_commands(command):
+async def update_commands(msg):
+    new_command = msg.split("/newcmd ", 1)[1]  
     if "commands" in db.keys():
         commands = db["commands"]
-        commands.append(command)
+        commands.append(new_command)
         db["commands"] = commands
+        return new_command
     else:
         db["commands"] = ["commands"]
 
+    
+
 @bot.command(name="delete_commands", help="Will delete command based on user input--user input will be index of command to be deleted")
-async def delete_commands(index):
-  commands = db["commands"]
-  if len(commands) > index:
-    del commands[index]
-  db["commands"] = commands
+async def delete_commands(msg):
+    commands = []
+    if "commands" in db.keys():
+      index = int(msg.split("/delcmd", 1)[1])
+      print(index)
+      # await delete_commands(index)
+      commands = db["commands"]
+      if len(commands) > index:
+        del commands[index]
+        db["commands"] = commands
+      return commands
 ########################################################################
 ########################################################################
 
@@ -97,18 +107,23 @@ async def on_message(message):
         #     await message.channel.send(random.choice(options))
 
         if msg.startswith("/newcmd"):
-            new_command = msg.split("/newcmd ", 1)[1]
-            await update_commands(new_command)
-            await message.channel.send(f"New command '{new_command}' was created!")
+
+          new_command = await update_commands(msg)
+            # new_command = msg.split("/newcmd ", 1)[1]
+            # await update_commands(new_command)
+            # await message.channel.send(f"New command '{new_command}' was created!")
+          await message.channel.send(f"New command '{new_command}' was created!")
 
         if msg.startswith("/delcmd"):
-            commands = []
-            if "commands" in db.keys():
-              index = int(msg.split("/delcmd", 1)[1])
-              await delete_commands(index)
-              commands = db["commands"]
+            # commands = []
+            # if "commands" in db.keys():
+            #   index = int(msg.split("/delcmd", 1)[1])
+            #   # await delete_commands(index)
+            #   commands = db["commands"]
+              commands = await delete_commands(msg)
               await message.channel.send("Okay. Here are all the commands I have left over: ")
-              await message.channel.send(commands)
+              for item in commands:
+                await message.channel.send(f"{item} {commands.index(item)}")
 
         if msg == "/greet":
             name = message.author.name
